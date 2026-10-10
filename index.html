@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Interview Prep Player</title>
+<meta name="description" content="Audio study player: SQL Server DBAs moving to AWS, EM interview prep.">
+<meta name="theme-color" content="#f4efe6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14181c" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4efe6; --card:#fffdf8; --ink:#1d2327; --muted:#5e666c; --line:#e3dccf;
+  --accent:#0f6e6a; --accent-ink:#ffffff; --accent-soft:#dcefeb; --listen:#7a4b12;
+  --shadow:0 1px 2px rgba(29,35,39,.06),0 8px 24px rgba(29,35,39,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14181c; --card:#1c2227; --ink:#e9e6df; --muted:#9aa3a9; --line:#2c343a;
+    --accent:#4fc2b8; --accent-ink:#0d1f1d; --accent-soft:#1d3634; --listen:#e2b36b;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 80px}
+header h1{font-family:Fraunces,Georgia,serif;font-weight:650;font-size:clamp(26px,6vw,36px);line-height:1.12;margin:8px 0 6px;letter-spacing:-.01em}
+header p{margin:0;color:var(--muted)}
+.player{position:sticky;top:0;z-index:5;margin:18px -16px 22px;padding:14px 16px 16px;background:var(--bg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+.now{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+.now .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.now .chap{font-weight:600;font-size:15px;line-height:1.3}
+.time{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);white-space:nowrap}
+audio{width:100%;height:44px;display:block}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
+button,.btn{font:500 14px/1 "IBM Plex Sans",sans-serif;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:10px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;min-height:40px}
+button:hover,.btn:hover{border-color:var(--accent)}
+button:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.speeds{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.speeds button{border:0;border-radius:0;padding:10px 11px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.speeds button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.spacer{flex:1}
+.nav{display:inline-flex;gap:6px}
+.speed-cycle{display:none;font-family:"IBM Plex Mono",monospace;font-size:13px;min-width:56px;justify-content:center;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.nav button{padding:8px 0;width:46px;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:13px}
+@media (max-width:480px){
+  .player{padding:10px 16px 12px;margin-top:12px}
+  .card{padding:12px}
+  .now{margin-bottom:8px}
+  .controls{gap:6px;margin-top:10px;flex-wrap:nowrap}
+  .spacer{display:none}
+  .nav button{width:40px;min-height:36px}
+  .speeds{display:none}
+  .speed-cycle{display:inline-flex;min-height:36px;margin-left:auto}
+}
+.resume{margin-top:10px;font-size:14px;color:var(--muted);display:none}
+.resume button{min-height:0;padding:4px 10px;font-size:13px;margin-left:6px}
+.note{font-size:14px;color:var(--muted);background:var(--accent-soft);border-radius:12px;padding:12px 14px;margin:0 0 22px}
+.note strong{color:var(--ink)}
+.note a{color:var(--accent);font-weight:500}
+h2{font-family:Fraunces,Georgia,serif;font-weight:500;font-size:20px;margin:28px 0 10px}
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:0 0 10px}
+details.current{border-color:var(--accent)}
+summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;gap:12px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary .t{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--muted);min-width:44px}
+summary .name{flex:1;font-weight:600;line-height:1.3}
+summary .count{font-size:13px;color:var(--muted)}
+summary .play{min-height:34px;padding:6px 12px;font-size:13px}
+details.current summary .t{color:var(--accent)}
+ol{margin:0;padding:4px 16px 14px 16px;list-style:none;border-top:1px solid var(--line)}
+li{padding:12px 0;border-bottom:1px dashed var(--line)}
+li:last-child{border-bottom:0}
+.q{font-weight:500}
+.q .n{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:13px;margin-right:6px}
+.a{margin-top:4px;font-size:15px;color:var(--muted)}
+.a b{color:var(--listen);font-weight:600}
+footer{margin-top:36px;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p>EM interview prep</p>
+    <h1>SQL Server DBAs moving to AWS</h1>
+    <p>112 questions with what a strong answer covers, about 28 minutes.</p>
+  </header>
+
+  <div class="player">
+    <div class="card">
+      <div class="now">
+        <div><div class="label">Now playing</div><div class="chap" id="chap">Intro</div></div>
+        <div class="time" id="time">0:00 / 27:55</div>
+      </div>
+      <audio id="audio" controls preload="metadata" src="EM-Interview-Prep-SQL-Server-to-AWS.mp3"></audio>
+      <div class="controls">
+        <div class="nav">
+          <button id="prev" aria-label="Previous section" title="Previous section">&#9198;</button>
+          <button id="back" aria-label="Back 15 seconds">&minus;15</button>
+          <button id="fwd" aria-label="Forward 15 seconds">+15</button>
+          <button id="next" aria-label="Next section" title="Next section">&#9197;</button>
+        </div>
+        <span class="spacer"></span>
+        <div class="speeds" role="group" aria-label="Playback speed" id="speeds"></div>
+        <button id="speedCycle" class="speed-cycle" aria-label="Playback speed, tap to change">1×</button>
+      </div>
+      <div class="resume" id="resume">Picked up where you left off. <button id="restart">Start over</button></div>
+    </div>
+  </div>
+
+  <p class="note"><strong>Listening on your phone:</strong> it keeps playing with the screen locked or while you use other apps, and the lock screen controls skip between sections. Fully closing the browser stops any web page, so for that, <a class="dl" href="EM-Interview-Prep-SQL-Server-to-AWS.mp3" download>download the MP3</a> and play it from your files or podcast app.</p>
+
+  <h2>Sections</h2>
+  <div id="sections"></div>
+
+  <footer>Your place and speed are remembered on this device.</footer>
+</div>
+
+<script>
+const SECTIONS = [{"title": "SQL Server technical depth", "items": [{"n": 1, "q": "Walk me through what happens when a query runs slowly in production. How would your team triage it?", "a": "wait stats, execution plans, Query Store, blocking vs resource pressure, recent deploys or stats changes."}, {"n": 2, "q": "What is parameter sniffing, and how have you seen teams handle it?", "a": "plan reuse for skewed data, OPTION(RECOMPILE), plan guides, Query Store forced plans, PSP optimization in newer versions."}, {"n": 3, "q": "How does Query Store help during a migration specifically?", "a": "baseline before move, compare plans after, catch regressions from compatibility level changes."}, {"n": 4, "q": "Explain the transaction log. What causes it to grow uncontrollably?", "a": "recovery model, missed log backups, long open transactions, replication or AG send queues, VLF counts."}, {"n": 5, "q": "How do you think about indexing strategy on a large OLTP system?", "a": "clustered key choice, covering vs over-indexing, write cost, missing-index DMVs as hints not orders."}, {"n": 6, "q": "What is TempDB contention, and how is it configured well?", "a": "multiple equal data files, allocation contention, fast storage, local NVMe on EC2 instance store."}, {"n": 7, "q": "What's the difference between blocking and deadlocks, and how do you investigate each?", "a": "blocking chains, extended events, deadlock graphs, isolation levels, RCSI."}, {"n": 8, "q": "When would you recommend Read Committed Snapshot Isolation?", "a": "reducing reader-writer blocking, TempDB version store cost, application behaviour change risk."}, {"n": 9, "q": "What does raising the database compatibility level risk, and how do you de-risk it?", "a": "cardinality estimator changes, Query Store baseline, staged rollout, hint to legacy CE."}, {"n": 10, "q": "How do you manage statistics and index maintenance on large tables?", "a": "auto-update thresholds, sampled vs full scans, Ola Hallengren-style jobs, maintenance windows."}, {"n": 11, "q": "What SQL Server features commonly block a move to a managed service?", "a": "SSIS, SSRS, SSAS, cross-database queries, linked servers, CLR, FILESTREAM, distributed transactions, SQL Agent dependencies."}, {"n": 12, "q": "How would you inventory a SQL Server estate you've just inherited?", "a": "versions and editions, size, workload profile, dependencies, owners, licensing, tooling like DMA or AWS discovery tools."}, {"n": 13, "q": "What's your view on version and edition sprawl, and does it matter for migration?", "a": "versions past end of support, Enterprise features in use vs licensed, upgrade-in-flight risk."}, {"n": 14, "q": "How do you tell if a server is CPU, memory, or IO bound?", "a": "wait types, PLE and memory grants, IO latency per file, perfmon counters, right-sizing input."}, {"n": 15, "q": "How hands-on do you expect to be technically in this role?", "a": "honest self-assessment, enough depth to challenge estimates and plans, deferring to the principal on design."}], "start": 8.546}, {"title": "HA, DR, backup and recovery", "items": [{"n": 16, "q": "Explain the difference between RPO and RTO, and how you'd get the business to commit to them.", "a": "per-system tiers, cost of each nine, written sign-off rather than \"zero data loss\" by default."}, {"n": 17, "q": "Compare Always On Availability Groups and Failover Cluster Instances.", "a": "database-level vs instance-level, shared storage for FCI, readable secondaries, licensing."}, {"n": 18, "q": "How do synchronous and asynchronous commit differ, and where would you use each?", "a": "latency vs data loss, sync within a region or AZ pair, async for cross-region DR."}, {"n": 19, "q": "How would you build FCIs on AWS, given there's no traditional SAN?", "a": "FSx for Windows File Server or FSx for NetApp ONTAP as shared storage, or third-party replication."}, {"n": 20, "q": "How does Multi-AZ work for RDS for SQL Server, and what do you give up?", "a": "AWS-managed failover, no control over the secondary, edition-dependent technology, failover testing."}, {"n": 21, "q": "How would you design cross-region DR for SQL Server on AWS?", "a": "distributed AGs or async replicas on EC2, RDS cross-region read replicas where supported, backup copy to another region, DNS failover."}, {"n": 22, "q": "When did your team last test a restore, and how do you make that routine?", "a": "automated restore tests, measured restore times, backups are only proven by restores."}, {"n": 23, "q": "How do backups change when you move to RDS?", "a": "automated snapshots and point-in-time restore, native .bak to S3 for portability, retention and cost."}, {"n": 24, "q": "What's your approach to backups on EC2?", "a": "native backups to S3, EBS snapshots with VSS consistency, AWS Backup policies, immutability."}, {"n": 25, "q": "How do you protect backups against ransomware?", "a": "S3 Object Lock, separate accounts, cross-account and cross-region copies, restricted delete permissions."}, {"n": 26, "q": "Tell me about a major outage you managed. What did you change afterwards?", "a": "calm incident command, blameless review, concrete follow-ups that actually shipped."}, {"n": 27, "q": "How do you run a DR test without disrupting the business?", "a": "scheduled game days, isolated failover, runbooks, measuring actual RTO against target."}], "start": 219.188}, {"title": "Migration strategy and execution", "items": [{"n": 28, "q": "Why is the company moving to AWS, and how would that shape your migration priorities?", "a": "knowing the driver: DC exit, cost, licensing, agility, and tying sequencing to it. Ask them if you don't know."}, {"n": 29, "q": "How would you decide between rehost, replatform and refactor for each database?", "a": "per-workload decision, criticality, feature dependencies, team capacity, not one answer for all."}, {"n": 30, "q": "How would you build a migration wave plan?", "a": "dependency mapping, low-risk pilots first, grouping by application not by server, capacity per wave."}, {"n": 31, "q": "Which database would you migrate first, and why?", "a": "low criticality but representative, builds runbook and confidence, avoids the crown jewels."}, {"n": 32, "q": "Compare backup and restore, log shipping, AG-based and DMS-based migration methods.", "a": "downtime window, database size, network bandwidth, complexity, rollback options."}, {"n": 33, "q": "How would you migrate a multi-terabyte database with a cutover window under an hour?", "a": "seed with full backup or snapshot, keep in sync with log shipping or AG replica, short final cutover."}, {"n": 34, "q": "What is AWS DMS good at, and where does it struggle for SQL Server?", "a": "heterogeneous moves and CDC, but LOB handling, schema objects, and performance at scale need care."}, {"n": 35, "q": "How do you handle network bandwidth for large data transfers?", "a": "Direct Connect, Snowball for offline seeding, compression, transfer time estimates in the plan."}, {"n": 36, "q": "What's your rollback plan if a cutover goes wrong?", "a": "reverse replication or keeping source read-only but intact, clear go or no-go criteria, time-boxed decision."}, {"n": 37, "q": "How do you define \"done\" for a migrated database?", "a": "performance parity vs baseline, monitoring and backups live, runbooks updated, source decommissioned."}, {"n": 38, "q": "How would you validate data after migration?", "a": "row counts, checksums, application smoke tests, business owner sign-off."}, {"n": 39, "q": "How do you deal with application teams who won't commit to cutover dates?", "a": "executive sponsorship, shared calendar, making delay costs visible, escalation path."}, {"n": 40, "q": "How would you estimate a migration programme's timeline?", "a": "pilot to calibrate, velocity per wave, contingency, honesty about unknowns."}, {"n": 41, "q": "What are the biggest risks you'd expect in this migration?", "a": "hidden dependencies, linked servers, licensing surprises, performance regressions, team burnout."}, {"n": 42, "q": "How would you handle a migration that's slipping badly?", "a": "early transparency, re-plan scope, protect quality over date, no heroics as a strategy."}], "start": 389.543}, {"title": "AWS target platforms and architecture", "items": [{"n": 43, "q": "When would you choose RDS for SQL Server over SQL Server on EC2?", "a": "managed patching and backups vs control, feature gaps, no sysadmin on RDS, team skills."}, {"n": 44, "q": "What is RDS Custom for SQL Server, and when does it make sense?", "a": "OS and instance access for apps needing customisation, while keeping some automation."}, {"n": 45, "q": "What does a DBA lose when moving to RDS?", "a": "no OS access, limited sysadmin, restricted features and trace flags, AWS controls patch timing within windows."}, {"n": 46, "q": "Have you looked at Babelfish for Aurora PostgreSQL or moving off SQL Server entirely?", "a": "licensing savings vs T-SQL compatibility gaps, testing effort, application team appetite."}, {"n": 47, "q": "How would you choose EC2 instance types for SQL Server?", "a": "memory-optimised families, vCPU count vs core licensing, Optimize CPUs, instance store for TempDB."}, {"n": 48, "q": "How do you configure EBS storage for SQL Server?", "a": "gp3 vs io2, separate volumes for data, log and TempDB, IOPS and throughput baselines."}, {"n": 49, "q": "How would you design the network for database workloads on AWS?", "a": "private subnets, multiple AZs, security groups, hybrid connectivity, latency to app tiers still on-prem."}, {"n": 50, "q": "What happens to apps that stay on-prem while their database moves?", "a": "latency on chatty apps, moving app and database together, testing round-trip-heavy workloads."}, {"n": 51, "q": "How do you handle SQL Agent jobs, SSIS and SSRS in AWS?", "a": "what RDS supports natively, EC2 for full SSIS and SSRS, or moving ETL to AWS Glue or other tools."}, {"n": 52, "q": "What's your view on consolidating many small instances during migration?", "a": "licensing and cost savings vs noisy neighbours, blast radius, maintenance coordination."}, {"n": 53, "q": "How do you manage Active Directory authentication for SQL Server on AWS?", "a": "AWS Managed Microsoft AD or trust to on-prem AD, Windows auth support on RDS."}, {"n": 54, "q": "Would you use Infrastructure as Code for database servers? How?", "a": "Terraform or CloudFormation, standard builds, drift detection, reviewed changes."}], "start": 584.829}, {"title": "Performance, cost and FinOps", "items": [{"n": 55, "q": "How do SQL Server licensing options differ on AWS?", "a": "license-included vs BYOL, Software Assurance and License Mobility constraints, Dedicated Hosts, Standard vs Enterprise."}, {"n": 56, "q": "Licensing is often the biggest line item. How would you reduce it?", "a": "downgrade Enterprise to Standard where features allow, cut vCPUs, consolidate, Developer edition for non-prod."}, {"n": 57, "q": "How do you right-size a server you're migrating?", "a": "measured utilisation over weeks, peak not average, avoid lifting over-provisioned on-prem specs."}, {"n": 58, "q": "What would you track to know whether the migration is saving money?", "a": "cost per database or per application, tagging, monthly review with finance, before and after baseline."}, {"n": 59, "q": "How do Reserved Instances and Savings Plans fit with a migration still in flight?", "a": "commit once workloads stabilise, coverage targets, flexibility while sizes still change."}, {"n": 60, "q": "A database performs worse after migration. How would you lead the response?", "a": "compare to baseline, check storage throughput and instance limits, plan changes, no blame on the cloud by reflex."}, {"n": 61, "q": "What monitoring would you put on SQL Server in AWS?", "a": "CloudWatch, Performance Insights or Database Insights, existing tools like SolarWinds or Redgate, alerting on symptoms users feel."}, {"n": 62, "q": "How do you handle non-production environments to control cost?", "a": "scheduled shutdown, smaller instances, Developer edition on EC2, data masking for copies."}, {"n": 63, "q": "How would you explain a cost overrun to a senior leader?", "a": "plain numbers, root cause, corrective plan, no surprises next month."}, {"n": 64, "q": "Who owns cloud cost in your model: DBAs, app teams, or finance?", "a": "shared accountability, visibility per team, DBAs advising on efficiency."}], "start": 759.667}, {"title": "Security, compliance and governance", "items": [{"n": 65, "q": "How does the shared responsibility model change what DBAs own?", "a": "AWS owns the physical layer and, on RDS, OS patching; the team still owns access, data, configuration and encryption choices."}, {"n": 66, "q": "How would you handle encryption at rest and in transit?", "a": "KMS-backed storage encryption, TDE where needed, forced TLS, key ownership and rotation."}, {"n": 67, "q": "How do you manage privileged access to production databases?", "a": "least privilege, no shared S A logins, IAM and AD groups, just-in-time access, Secrets Manager."}, {"n": 68, "q": "How do you meet audit requirements on RDS or EC2?", "a": "SQL Server Audit, log export to CloudWatch or S3, retention, evidence for auditors."}, {"n": 69, "q": "How would you handle data residency or regulatory constraints?", "a": "region choice, backups staying in region, compliance team early in design. Note local rules such as APRA CPS 234 if relevant."}, {"n": 70, "q": "What guardrails would you set up so teams can't create insecure databases?", "a": "AWS Organizations SCPs, AWS Config rules, approved templates, public access blocked."}, {"n": 71, "q": "How do you manage patching across a large estate?", "a": "maintenance windows, staged rings from dev to prod, RDS auto minor upgrades, tracking compliance."}, {"n": 72, "q": "How would you handle production data in lower environments?", "a": "masking or synthetic data, restricted refreshes, privacy obligations."}], "start": 897.401}, {"title": "Operations, automation and the evolving DBA role", "items": [{"n": 73, "q": "How does the DBA role change after the move to AWS?", "a": "less racking and patching, more automation, performance, cost, architecture and developer enablement."}, {"n": 74, "q": "What should the team automate first?", "a": "repetitive, error-prone tasks: builds, restores, refreshes, patching, health checks."}, {"n": 75, "q": "What scripting or tooling skills will your DBAs need?", "a": "PowerShell and dbatools, Python, AWS CLI, Terraform, Git, CI/CD pipelines."}, {"n": 76, "q": "How would you introduce database change management with CI/CD?", "a": "schema in source control, migrations-based or state-based tools, reviews, automated deployment."}, {"n": 77, "q": "How do you structure on-call for a DBA team?", "a": "sustainable rotation, actionable alerts only, runbooks, time off after bad nights, tracking pages per week."}, {"n": 78, "q": "How do you reduce toil?", "a": "measure where time goes, set a toil budget, fix noisy alerts, invest saved time in automation."}, {"n": 79, "q": "What metrics would you use to judge the team's operational health?", "a": "incidents and MTTR, change failure rate, restore test success, on-call load, migration velocity."}, {"n": 80, "q": "How do you run the old and new estates at the same time without burning the team out?", "a": "explicit capacity split, freezing low-value on-prem work, decommissioning fast, possibly temporary help."}, {"n": 81, "q": "Should DBAs become a platform team offering self-service databases?", "a": "paved road with guardrails, DBAs as consultants, scaling expertise across app teams."}, {"n": 82, "q": "How would you handle a runbook culture that lives in people's heads?", "a": "documentation as part of done, pairing, reducing key-person risk."}], "start": 1011.919}, {"title": "SQL Server to PostgreSQL compatibility", "items": [{"n": 83, "q": "How would you assess whether a SQL Server database is a good candidate for PostgreSQL?", "a": "amount of T-SQL logic, use of SQL Server-only features, ORM vs hand-written SQL, run AWS Schema Conversion Tool or DMS Schema Conversion for an effort report."}, {"n": 84, "q": "What are the main data type mapping issues from SQL Server to PostgreSQL?", "a": "DATETIME to timestamp, BIT to boolean, UNIQUEIDENTIFIER to uuid, NVARCHAR to text or varchar in UTF-8, no TINYINT, MONEY precision, IDENTITY to identity columns."}, {"n": 85, "q": "SQL Server is usually case-insensitive. What breaks in PostgreSQL?", "a": "case-sensitive string comparison by default, citext or nondeterministic ICU collations, unquoted identifiers folding to lower case, quoted mixed-case names."}, {"n": 86, "q": "How does T-SQL differ from PL/pgSQL?", "a": "TRY CATCH vs EXCEPTION blocks, no table variables, temp tables behave differently, TOP vs LIMIT, @@IDENTITY or SCOPE_IDENTITY vs RETURNING."}, {"n": 87, "q": "How do stored procedures and functions differ between the two?", "a": "procedures can manage transactions since PG 11, functions return result sets differently, multiple result sets from one proc are awkward in PostgreSQL."}, {"n": 88, "q": "How does transaction behaviour differ?", "a": "any error aborts the whole transaction in PostgreSQL until rollback, DDL is transactional, autocommit defaults in drivers, savepoints."}, {"n": 89, "q": "What replaces clustered indexes in PostgreSQL?", "a": "heap tables only, CLUSTER is a one-off reorder, covering indexes with INCLUDE, BRIN for naturally ordered data."}, {"n": 90, "q": "How would you replace cross-database queries and linked servers?", "a": "consolidate into schemas in one database, postgres_fdw for remote access, or move integration into the application layer."}, {"n": 91, "q": "How do you replace SQL Agent, SSIS and Database Mail?", "a": "pg_cron for scheduling, AWS Glue, Step Functions or Lambda for ETL, notifications via SNS or the application."}, {"n": 92, "q": "What concurrency and locking differences matter for applications?", "a": "MVCC so readers don't block writers by default, no lock escalation, different deadlock and NOLOCK habits, vacuum to clear dead rows."}, {"n": 93, "q": "SQL Server developers rely heavily on query hints. What happens in PostgreSQL?", "a": "no native hints, planner driven by statistics, tune with indexes, statistics targets and config, pg_hint_plan extension as a last resort."}, {"n": 94, "q": "What is Babelfish for Aurora PostgreSQL, and what are its limits?", "a": "accepts TDS connections and T-SQL so apps change less, but unsupported features remain; run Babelfish Compass to find them, and plan for a long-term dual dialect."}, {"n": 95, "q": "Would you choose Babelfish or a full conversion?", "a": "Babelfish to exit licensing fast for low-complexity apps, full conversion for long-lived core systems, decided per application."}, {"n": 96, "q": "How do you test that a converted application behaves the same?", "a": "automated regression tests, comparing result sets on sample queries, performance tests at production scale, checking null, collation and rounding edge cases."}, {"n": 97, "q": "What application and driver changes come with PostgreSQL?", "a": "new drivers and connection strings, ORM dialect switch, connection pooling with PgBouncer or RDS Proxy because each connection is a process, retry logic."}], "start": 1142.023}, {"title": "PostgreSQL features and how it helps", "items": [{"n": 98, "q": "What's the business case for moving some workloads from SQL Server to PostgreSQL?", "a": "no licence cost, freedom from edition limits, broad talent pool, conversion effort weighed honestly against savings."}, {"n": 99, "q": "Which PostgreSQL features would SQL Server people find most useful?", "a": "JSONB with GIN indexes, partial and expression indexes, array and range types, declarative partitioning, transactional DDL."}, {"n": 100, "q": "How do PostgreSQL extensions change what's possible?", "a": "pg_stat_statements, PostGIS, pgvector for AI search, pg_partman, pg_cron, and checking what RDS or Aurora supports."}, {"n": 101, "q": "What index types does PostgreSQL offer beyond B-tree, and when would you use them?", "a": "GIN for JSONB and full-text, GiST for geometry and ranges, BRIN for huge time-ordered tables, hash for equality."}, {"n": 102, "q": "How does PostgreSQL handle JSON compared with SQL Server?", "a": "native binary JSONB with indexing and operators vs JSON stored as text in older SQL Server versions, SQL/JSON functions like JSON_TABLE in PG 17."}, {"n": 103, "q": "What do you know about recent PostgreSQL releases?", "a": "PG 17 incremental backups and logical replication failover; PG 18 asynchronous I/O, uuidv7() and B-tree skip scan. Check which versions RDS and Aurora support."}, {"n": 104, "q": "What is VACUUM, and why must a SQL Server team learn it?", "a": "MVCC leaves dead rows, autovacuum tuning, table bloat, transaction ID wraparound as an outage risk."}, {"n": 105, "q": "What replaces Query Store and DMVs for performance work?", "a": "pg_stat_statements, EXPLAIN ANALYZE, pg_stat views, auto_explain, CloudWatch Database Insights."}, {"n": 106, "q": "When would you choose Aurora PostgreSQL over RDS for PostgreSQL?", "a": "Aurora's distributed storage across three AZs, faster failover, up to 15 low-lag readers, Global Database; RDS is often cheaper for steady small workloads."}, {"n": 107, "q": "Which Aurora features could help this migration?", "a": "Serverless v2 for spiky or dev workloads, I/O-Optimized pricing for heavy IO, Blue/Green deployments for upgrades, zero-ETL to Redshift."}, {"n": 108, "q": "How does replication and HA work in PostgreSQL compared with Availability Groups?", "a": "streaming physical replicas, logical replication for selective or cross-version sync, managed failover on RDS and Aurora rather than Patroni-style tooling."}, {"n": 109, "q": "How do major version upgrades work in PostgreSQL on AWS?", "a": "yearly major releases, pg_upgrade under the hood, Blue/Green deployments to cut downtime, testing extensions first."}, {"n": 110, "q": "How does PostgreSQL partitioning compare with SQL Server partitioning?", "a": "declarative range, list and hash partitioning, partition pruning, pg_partman for automation, no partition functions or schemes."}, {"n": 111, "q": "What full-text search options does PostgreSQL have?", "a": "tsvector and tsquery with GIN indexes, language dictionaries, or OpenSearch for heavier search needs."}, {"n": 112, "q": "How would you upskill SQL Server DBAs on PostgreSQL?", "a": "start with a low-risk app, pair with an experienced PostgreSQL engineer, focus on vacuum, MVCC, planner and extensions, AWS training and certification."}], "start": 1389.505}, {"title": "Questions to ask the interviewer", "items": [{"n": null, "q": "What's driving the move to AWS, and what deadline or event is it tied to?", "a": ""}, {"n": null, "q": "How big is the estate: instances, total size, versions, and how much is Enterprise edition?", "a": ""}, {"n": null, "q": "Has the target platform mix, RDS, RDS Custom or EC2, been decided, or is that still open?", "a": ""}, {"n": null, "q": "What's already been migrated, and what went wrong on those?", "a": ""}, {"n": null, "q": "Which systems worry you most, and why?", "a": ""}, {"n": null, "q": "How does the team feel about the move today? Who are the key people I'd need to keep?", "a": ""}, {"n": null, "q": "How do you see the split between your role and mine?", "a": ""}, {"n": null, "q": "What would make you say this hire was a success in 12 months?", "a": ""}], "start": 1631.545}];
+const audio = document.getElementById('audio');
+const fmt = s => { s = Math.max(0, Math.floor(s||0)); const m = Math.floor(s/60), r = s%60; return m + ':' + String(r).padStart(2,'0'); };
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+};
+
+// sections list
+const wrap = document.getElementById('sections');
+SECTIONS.forEach((s, i) => {
+  const d = document.createElement('details');
+  d.id = 'sec' + i;
+  const qs = s.items.filter(x => x.n).length;
+  d.innerHTML = `<summary><span class="t">${fmt(s.start)}</span><span class="name"></span>
+    <span class="count">${qs ? qs + ' Qs' : ''}</span><button class="play" type="button">Play</button></summary><ol></ol>`;
+  d.querySelector('.name').textContent = s.title;
+  const ol = d.querySelector('ol');
+  s.items.forEach(it => {
+    const li = document.createElement('li');
+    const q = document.createElement('div'); q.className = 'q';
+    if (it.n) { const n = document.createElement('span'); n.className = 'n'; n.textContent = it.n; q.append(n); }
+    q.append(document.createTextNode(it.q)); li.append(q);
+    if (it.a) { const a = document.createElement('div'); a.className = 'a'; a.innerHTML = '<b>Listen for:</b> '; a.append(document.createTextNode(it.a)); li.append(a); }
+    ol.append(li);
+  });
+  d.querySelector('.play').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); jump(i); });
+  wrap.append(d);
+});
+
+function currentIndex(t){ let idx = -1; SECTIONS.forEach((s,i) => { if (t >= s.start - 0.3) idx = i; }); return idx; }
+function jump(i){ i = Math.max(0, Math.min(SECTIONS.length-1, i)); audio.currentTime = SECTIONS[i].start; audio.play(); }
+
+// speed
+const SPEEDS = [1, 1.25, 1.5, 1.75];
+const speedWrap = document.getElementById('speeds');
+function setSpeed(v){
+  audio.playbackRate = v; audio.defaultPlaybackRate = v; store.set('iprep.speed', v);
+  speedWrap.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === v)));
+  document.getElementById('speedCycle').textContent = v + '×';
+}
+document.getElementById('speedCycle').onclick = () => {
+  const i = SPEEDS.indexOf(audio.playbackRate);
+  setSpeed(SPEEDS[(i + 1) % SPEEDS.length]);
+};
+SPEEDS.forEach(v => { const b = document.createElement('button'); b.type='button'; b.dataset.v = v; b.textContent = v + '×'; b.onclick = () => setSpeed(v); speedWrap.append(b); });
+setSpeed(parseFloat(store.get('iprep.speed')) || 1);
+
+document.getElementById('back').onclick = () => audio.currentTime = Math.max(0, audio.currentTime - 15);
+document.getElementById('fwd').onclick = () => audio.currentTime = Math.min(audio.duration||1e9, audio.currentTime + 15);
+document.getElementById('prev').onclick = () => { const i = currentIndex(audio.currentTime); jump(audio.currentTime - (SECTIONS[i]?.start||0) > 3 ? i : i-1); };
+document.getElementById('next').onclick = () => jump(currentIndex(audio.currentTime) + 1);
+
+// resume where you left off
+let lastIdx = -2, lastSave = 0;
+function restore(){
+  const saved = parseFloat(store.get('iprep.pos'));
+  if (saved > 10 && saved < audio.duration - 5) { audio.currentTime = saved; lastSave = saved; document.getElementById('resume').style.display = 'block'; }
+  audio.playbackRate = parseFloat(store.get('iprep.speed')) || 1;
+}
+if (audio.readyState >= 1) restore(); else audio.addEventListener('loadedmetadata', restore, { once: true });
+document.getElementById('restart').onclick = () => { audio.currentTime = 0; document.getElementById('resume').style.display = 'none'; };
+
+// UI + lock screen
+function update(){
+  const t = audio.currentTime, i = currentIndex(t);
+  document.getElementById('time').textContent = fmt(t) + ' / ' + fmt(audio.duration || 1675);
+  if (i !== lastIdx) {
+    lastIdx = i;
+    document.getElementById('chap').textContent = i < 0 ? 'Intro' : SECTIONS[i].title;
+    document.querySelectorAll('details').forEach((d,k) => d.classList.toggle('current', k === i));
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: i < 0 ? 'Intro' : SECTIONS[i].title,
+        artist: 'EM interview prep',
+        album: 'SQL Server DBAs to AWS'
+      });
+    }
+  }
+  if (Math.abs(t - lastSave) > 5) { lastSave = t; store.set('iprep.pos', t); }
+  if ('mediaSession' in navigator && navigator.mediaSession.setPositionState && audio.duration) {
+    try { navigator.mediaSession.setPositionState({ duration: audio.duration, playbackRate: audio.playbackRate, position: Math.min(t, audio.duration) }); } catch(e){}
+  }
+}
+audio.addEventListener('timeupdate', update);
+audio.addEventListener('pause', () => store.set('iprep.pos', audio.currentTime));
+
+if ('mediaSession' in navigator) {
+  const ms = navigator.mediaSession, set = (a, f) => { try { ms.setActionHandler(a, f); } catch(e){} };
+  set('play', () => audio.play());
+  set('pause', () => audio.pause());
+  set('seekbackward', d => audio.currentTime = Math.max(0, audio.currentTime - (d.seekOffset || 15)));
+  set('seekforward', d => audio.currentTime = audio.currentTime + (d.seekOffset || 15));
+  set('seekto', d => { audio.currentTime = d.seekTime; });
+  set('previoustrack', () => document.getElementById('prev').click());
+  set('nexttrack', () => document.getElementById('next').click());
+}
+update();
+</script>
+</body>
+</html>
