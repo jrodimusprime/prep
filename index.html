@@ -46,16 +46,23 @@ button:focus-visible,.btn:focus-visible,summary:focus-visible{outline:2px solid 
 .spacer{flex:1}
 .nav{display:inline-flex;gap:6px}
 .speed-cycle{display:none;font-family:"IBM Plex Mono",monospace;font-size:13px;min-width:56px;justify-content:center;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.nav button{padding:8px 0;width:46px;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.nav button,.mute{padding:8px 0;width:46px;justify-content:center;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.mute[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.mute .off,.mute[aria-pressed="true"] .on{display:none}
+.mute[aria-pressed="true"] .off{display:inline}
 @media (max-width:480px){
   .player{padding:10px 16px 12px;margin-top:12px}
   .card{padding:12px}
   .now{margin-bottom:8px}
   .controls{gap:6px;margin-top:10px;flex-wrap:nowrap}
   .spacer{display:none}
-  .nav button{width:40px;min-height:36px}
+  .nav button,.mute{width:40px;min-height:36px}
   .speeds{display:none}
   .speed-cycle{display:inline-flex;min-height:36px;margin-left:auto}
+}
+@media (max-width:340px){
+  .nav{gap:4px}
+  .nav button,.mute{width:34px}
 }
 .resume{margin-top:10px;font-size:14px;color:var(--muted);display:none}
 .resume button{min-height:0;padding:4px 10px;font-size:13px;margin-left:6px}
@@ -104,6 +111,7 @@ footer{margin-top:36px;font-size:13px;color:var(--muted)}
           <button id="fwd" aria-label="Forward 15 seconds">+15</button>
           <button id="next" aria-label="Next section" title="Next section">&#9197;</button>
         </div>
+        <button id="mute" class="mute" aria-pressed="false" aria-label="Mute sound" title="Mute sound"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><g class="on"><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></g><g class="off"><path d="m16 9 6 6"/><path d="m22 9-6 6"/></g></svg></button>
         <span class="spacer"></span>
         <div class="speeds" role="group" aria-label="Playback speed" id="speeds"></div>
         <button id="speedCycle" class="speed-cycle" aria-label="Playback speed, tap to change">1×</button>
@@ -168,6 +176,17 @@ document.getElementById('speedCycle').onclick = () => {
 };
 SPEEDS.forEach(v => { const b = document.createElement('button'); b.type='button'; b.dataset.v = v; b.textContent = v + '×'; b.onclick = () => setSpeed(v); speedWrap.append(b); });
 setSpeed(parseFloat(store.get('iprep.speed')) || 1);
+
+// mute
+const muteBtn = document.getElementById('mute');
+function showMute(){
+  const label = audio.muted ? 'Turn sound on' : 'Mute sound';
+  muteBtn.setAttribute('aria-pressed', String(audio.muted));
+  muteBtn.setAttribute('aria-label', label); muteBtn.title = label;
+}
+muteBtn.onclick = () => { audio.muted = !audio.muted; };
+audio.addEventListener('volumechange', showMute);
+showMute();
 
 document.getElementById('back').onclick = () => audio.currentTime = Math.max(0, audio.currentTime - 15);
 document.getElementById('fwd').onclick = () => audio.currentTime = Math.min(audio.duration||1e9, audio.currentTime + 15);
